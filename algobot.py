@@ -24,7 +24,7 @@ from slack.web.classes.interactions import MessageInteractiveEvent
 
 # OAuth & Permissions로 들어가서
 # Bot User OAuth Access Token을 복사하여 문자열로 붙여넣습니다
-SLACK_TOKEN = 'xoxb-689663245013-694624077094-RQYCeKuznpIBI9a29XiIfvtk'
+SLACK_TOKEN = ''
 # Basic Information으로 들어가서
 # Signing Secret 옆의 Show를 클릭한 다음, 복사하여 문자열로 붙여넣습니다
 SLACK_SIGNING_SECRET = ''
@@ -53,8 +53,9 @@ def response_json(channel, message_blocks):
 
 def introduce_msg():
     return '''
-    안녕하세요? algobot 입니다.  
+    안녕하세요? *algobot* 입니다.  
 알고리즘 개념은 `@algobot -a topic` 으로 검색해주세요.
+검색 가능한 알고리즘 목록 보기 -> `@algobot -a` 
 문제 링크는 `@algobot -prob 문제 이름` 으로 검색해주세요.
 랜덤 문제는 `@algobot -random` 으로 검색해주세요.
     '''
@@ -62,7 +63,7 @@ def introduce_msg():
 def error_msg():
     return '''명령어가 잘못되었습니다.
 알고리즘 개념은 `@algobot -a topic` 으로 검색해주세요.
-"topic 목록" ("stack", "...")
+검색 가능한 알고리즘 목록 보기 -> `@algobot -a` 
 문제 링크는 `@algobot -prob 문제 이름` 으로 검색해주세요.
 랜덤 문제는 `@algobot -random` 으로 검색해주세요.        '''
 
@@ -70,7 +71,7 @@ def get_problem():
     url = "https://www.acmicpc.net/problemset"
     sourcecode = urllib.request.urlopen(url).read()
     soup = BeautifulSoup(sourcecode, "html.parser")
-    print(soup)
+    # print(soup)
 
 def mean_fun(text):
     if text in mean_dict.keys():
@@ -79,7 +80,8 @@ def mean_fun(text):
         list_problem = crawling_skill_problem(url,text)
         return list_mean + [' '] +list_problem
     else:
-        return ['다시 입력해주세요.']
+        return ['''검색어를 다시 확인해주세요. 
+`@algobot -a` 로 검색가능한 단어를 확인하실 수 있습니다.''']
     
 
 def crawling_mean():
@@ -95,29 +97,26 @@ def crawling_mean():
     total = soup.find("div", class_="row reference_list data")
     for i, body in enumerate(total.find_all("div", class_="widget-box-sub")):
         if i < 18 :
-            names.append(skill_dict[body.find("div", class_="header-caption").get_text().strip().lower()])
+
             names.append(body.find("div", class_="header-caption").get_text().strip().lower())
             classification.append(body.find("div", class_="widget-toolbar-sub").get_text().strip())
-            classification.append(body.find("div", class_="widget-toolbar-sub").get_text().strip())
             means.append(body.find("div", class_="inner-txt").get_text().strip())
-            means.append(body.find("div", class_="inner-txt").get_text().strip())
-    
-    for i in range(0,36):
+
+    for i in range(0,18):
         keyword = []
         keyword.append(classification[i])
         keyword.append(means[i])
         mean_dict[names[i]] = keyword
 
     del mean_dict['permutation & combination']
-    mean_dict['조합'], mean_dict['combination'] = ["Algorithm","조합은 집합에서 일부 원소를 취해 부분 집합을 만드는 방법을 말한다."]
-    mean_dict['순열'], mean_dict['permutation'] = ["Algorithm","순열은 순서가 부여된 임의의 집합을 다른 순서로 뒤섞는 연산이다"]
-
+    mean_dict['combination'] = ["*Algorithm*","조합은 집합에서 일부 원소를 취해 부분 집합을 만드는 방법을 말한다."]
+    mean_dict['permutation'] = ["*Algorithm*","순열은 순서가 부여된 임의의 집합을 다른 순서로 뒤섞는 연산이다"]
 
 def get_mean_list(text):
     mean_list = []
-    mean_list.append(text)
+    mean_list.append("*"+text.upper()+"*")
     mean_list.append(' ')
-    mean_list.append("분류 : " + mean_dict[text][0])
+    mean_list.append("*" + mean_dict[text][0] + "*")
     mean_list.append(mean_dict[text][1])
     return mean_list
 
@@ -125,9 +124,9 @@ def get_mean_list(text):
 def rand_problem(channel):
     url = "https://www.acmicpc.net/problem/recent/accepted/"
     rand_page = random.randrange(1,11)
-    print("rand_page : " + str(rand_page))
+    # print("rand_page : " + str(rand_page))
     rand_num = random.sample(range(1, 101), 10 )
-    print("rand_num : " + str(rand_num))
+    # print("rand_num : " + str(rand_num))
     rand_prob = []
 
     req = urllib.request.Request(url + str(rand_page), headers={'User-Agent': 'Mozilla/5.0'})
@@ -144,7 +143,7 @@ def rand_problem(channel):
                     td_list.append(td_tag.get_text())
             rand_prob.append(td_list)
 
-    print(rand_prob)
+    # print(rand_prob)
     pro_url = "https://www.acmicpc.net/problem/"
     return_list = []
     for i in rand_prob:
@@ -182,14 +181,14 @@ def crawling_skill_problem(url,text):
 
     prob_list = []
     if text == 'counting sort' or text == 'parametric search' or text =='quick sort' :
-        prob_list.append(text + "관련 문제는 준비되지 않아 정렬 관련 랜덤 문제 리스트입니다.")
+        prob_list.append("해당 Topic은 정렬 관련 랜덤 문제 리스트로 대체됩니다.")
     else:
-        prob_list.append(text + " 관련 랜덤 문제 리스트입니다. ")
+        prob_list.append(text.upper() + " 관련 랜덤 문제 리스트입니다. ")
 
     for i in random.sample(range(1, len(prob_name_list)),3):
         prob_list.append("*"+prob_name_list[i] +"* : "+ prob_url_list[i])
 
-    prob_list.append("*더 많은 "+ text + " 관련 문제 ->* " + url)
+    prob_list.append("*더 많은 "+ text + " 관련 문제 ->* " + "<"+ url+ "|" + "더 보기>")
 
     return prob_list
 
@@ -221,73 +220,40 @@ def set_skill():
     skill_dict['combination'] = '조합'
     skill_dict['dijkstra'] = '다익스트라 알고리즘'
 
-    skill_dict['스택'] = '스택'
-    skill_dict['큐'] = '큐'
-    skill_dict['DFS'] = 'DFS'
-    skill_dict['dfs'] = 'DFS'
-    skill_dict['BFS'] = 'BFS'
-    skill_dict['bfs'] = 'BFS'
-    skill_dict['재귀 호출'] = '재귀 호출'
-    skill_dict['우선순위큐'] = '우선 순위 큐'
-    skill_dict['그래프'] = '그래프 이론'
-    skill_dict['순열'] = '순열'
-    skill_dict['조합'] = '조합'
-    skill_dict['이분 탐색'] = '이분 탐색'
-    skill_dict['링크드리스트'] = '링크드 리스트'
-    skill_dict['트리'] = '트리'
-    skill_dict['해싱'] = '해싱'
-    skill_dict['정렬'] = '정렬'
-    skill_dict['permutation & combination'] = 'permutation & combination'
+def _algo_prob_selection(channel, text):
+    if text == "":
+        return "`@<봇이름> 스택` 과 같이 멘션해주세요."
 
-def _algo_prob_selection(text):
-   if text == "":
-       return "`@<봇이름> 스택` 과 같이 멘션해주세요."
+    else:
+        url = "https://www.acmicpc.net/problemset?search="
+        url2 = urllib.parse.quote_plus(text) # 일단 한글만! ex 스택,큐
+        url += url2
+        url = url.replace('%3C%40UKY7PS0GK%3E+','')
 
-   else:
-       url = "https://www.acmicpc.net/problemset?search="
-       url2 = urllib.parse.quote_plus(text) # 일단 한글만! ex 스택,큐
-       url += url2
-       url = url.replace('%3C%40UKY7PS0GK%3E+','')
+        #print(url.replace('%3C%40UKY7PS0GK%3E+',''))
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        source_code = urllib.request.urlopen(req).read()
+        soup = BeautifulSoup(source_code, "html.parser")
+        search_prob = []
+        col_md = soup.find("div",class_="col-md-12")
+        div_tag = col_md.find("div", class_="table-responsive")
+        for i, tr_tag in enumerate(div_tag.find_all("tr")):
+            if i<5 and i>0 :
+                td_list = []
+                for j, td_tag in enumerate(tr_tag.find_all("td")):
+                    if j != 2 and j != 3:
+                        td_list.append(td_tag.get_text())
+                search_prob.append(td_list)
 
-       #print(url.replace('%3C%40UKY7PS0GK%3E+',''))
-       req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-       source_code = urllib.request.urlopen(req).read()
-       soup = BeautifulSoup(source_code, "html.parser")
-
-       messages = []
-       #prob_url = "https://icpc.me/"
-       prob_url = "https://www.acmicpc.net/problem/"
-       prob_url_list = []
-
-       prob_name= []
-       prob_name_list = []
-       for msg in soup.find_all("div", class_="table-responsive"):
-           for atag in msg.find_all("a"):
-               prob_name.append(atag.get_text())
-
-           for td in msg.find_all("td", class_="list_problem_id"):
-               messages.append(td.get_text())
-               prob_url_list.append(prob_url+td.get_text())
-
-       for i,name in enumerate(prob_name):
-           if i==0 or i%3==0:
-               prob_name_list.append(name)
-
-
-       result = []
-       for i in range(0,len(prob_name_list)):
-           if i<10:
-               result.append("*"+prob_name_list[i] + "* : " + prob_url_list[i])
-           else:
-               result.append("*검색 내용 더 보기 ->*" + url )
-               break
-        
-
-#        #print(prob_name_list)   # 문제이름 모음
-#        #print(messages)         # 문제번호 모음
-#        #print(prob_url_list)    # URL 모음
-
-   return u'\n'.join(result)
+        pro_url = "https://www.acmicpc.net/problem/"
+        # print(search_prob)
+        return_list = []
+        for i in search_prob:
+            i[0] = pro_url + i[0]
+        search_prob = sorted(search_prob, key= lambda x : len(x[1]))
+        for i in search_prob:
+            return_list.append("<"+ i[0] + "|" + i[1] + "> \t *제출수* : " + str(i[2]) + " */ 정답비율* : " + i[3])
+        response(channel, list_to_str(return_list))
 
 # 챗봇이 멘션을 받았을 경우
 @slack_events_adaptor.on("app_mention")
@@ -296,7 +262,7 @@ def app_mentioned(event_data):
     text = event_data["event"]["text"]
     return_text = "안녕하세요? algobot입니다. 명령어를 입력해주세요."
 
-    print(text)
+    # print(text)
     # main cmd
     if len(text) > 12:
         cmd = text.split()[1]
@@ -307,14 +273,16 @@ def app_mentioned(event_data):
     if cmd == '-a': # 개념 함수 실행
         sub_cmd = " ".join(text.split()[2:]).replace('"','').lower()
         if sub_cmd == '': # 버튼
-            return_value = button_test(list(mean_dict.keys()))
-            print(type(return_value))
-            response_json(channel,return_value)
+            return_text = "검색 가능한 알고리즘 목록입니다. \n"
+            return_text += list_to_str(mean_dict)
         else :
             return_text = list_to_str(mean_fun(sub_cmd))
-    elif cmd == '-prob': # 문제 검색 함수 실행 
+    elif cmd == '-prob': # 문제 검색 함수 실행
         sub_cmd = " ".join(text.split()[2:]).replace('"','').lower()
-        return_text = _algo_prob_selection(sub_cmd)
+        th = threading.Thread(target = _algo_prob_selection, args=[channel,sub_cmd])
+        th.start()
+        response(channel, "*" + sub_cmd + "* 를 포함한 문제를 검색 중 입니다... :)")
+        return "OK", 200
     elif cmd == '-random': # 랜덤 함수 실행
         th = threading.Thread(target = rand_problem, args=[channel])
         th.start()
@@ -340,6 +308,3 @@ crawling_mean()
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000)
-
-
-
